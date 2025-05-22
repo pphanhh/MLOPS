@@ -2,22 +2,19 @@
 version: '3.8'
 services:
   fastapi-serving-app:
-    image: my-mlops-fastapi-server 
+    image: pphanhh/mlops-sentiment-server:local-build # Match Docker Hub repo if desired for local tag
     build:
       context: ..  # MLOPS/ root directory
-      dockerfile: dockerfiles/dockerfile # Path to Dockerfile from the context (MLOPS/)
+      dockerfile: dockerfiles/dockerfile # Path to Dockerfile from MLOPS/ context
     ports:
       - "5001:5001"
     volumes:
-      # Host paths are relative to MLOPS/ root (since context is MLOPS/)
-      # or use absolute paths on your host.
       - ../mlruns:/app/mlruns:ro
       - ../latest_runs.json:/app/artifacts_mount/latest_runs.json:ro
-      - ../test_data.csv:/app/artifacts_mount/test_data.csv:ro # If needed by serving app
-      - ../current_champion.json:/app/artifacts_mount/current_champion.json # If used
+      - ../test_data.csv:/app/artifacts_mount/test_data.csv:ro
+      - ../current_champion.json:/app/artifacts_mount/current_champion.json
     environment:
       MLFLOW_TRACKING_PATH_IN_SERVING: "/app/mlruns"
       ARTIFACTS_MOUNT_PATH_IN_SERVING: "/app/artifacts_mount"
       MLFLOW_EXPERIMENT_NAME_SERVING: "sentiment-analysis"
-      # Add any other ENV VARS your model_serve.py needs for local testing
     container_name: my-mlops-fastapi-server-local
