@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sentiment Analysis Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            display: none;
+        }
+        .positive {
+            color: green;
+            font-weight: bold;
+        }
+        .negative {
+            color: red;
+            font-weight: bold;
+        }
+        .neutral {
+            color: orange;
+            font-weight: bold;
+        }
+        .meter {
+            height: 20px;
+            position: relative;
+            background: #f3f3f3;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: inset 0 -1px 1px rgba(255, 255, 255, 0.3);
+            margin-top: 10px;
+        }
+        .meter > span {
+            display: block;
+            height: 100%;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            background-color: rgb(43, 194, 83);
+            position: relative;
+            overflow: hidden;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sentiment Analysis Demo</h1>
+    <p>
+        This demo uses a transformer model to analyze the sentiment of text.
+        Enter your text below and click "Analyze" to see the results.
+    </p>
+    
+    <div class="container">
+        <h3>Enter text to analyze:</h3>
+        <textarea id="text-input" placeholder="Type your text here..."></textarea>
+        <button id="analyze-btn">Analyze Sentiment</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('analyze-btn').addEventListener('click', async () => {
+            const text = document.getElementById('text-input').value;
+            if (!text) {
+                alert('Please enter some text to analyze');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Analyzing...';
+            
+            try {
+                const response = await fetch('http://localhost:5001/invocations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputs: [text]
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                // Assume response is an array with a single score between 0 and 1
+                let score = data[0];
+                
+                // Determine sentiment class
+                let sentimentClass = 'neutral';
+                let sentimentText = 'Neutral';
+                
+                if (score > 0.67) {
+                    sentimentClass = 'positive';
+                    sentimentText = 'Positive';
+                } else if (score < 0.33) {
+                    sentimentClass = 'negative';
+                    sentimentText = 'Negative';
+                }
+                
+                // Format confidence for display (as percentage)
+                const confidence = Math.max(score, 1 - score) * 100;
+                
+                // Create HTML for result
+                resultDiv.innerHTML = `
+                    <h3>Analysis Result:</h3>
+                    <p>Text: "${text}"</p>
+                    <p>Sentiment: <span class="${sentimentClass}">${sentimentText}</span></p>
+                    <p>Confidence: ${confidence.toFixed(2)}%</p>
+                    <p>Raw score: ${score.toFixed(4)}</p>
+                    
+                    <div class="meter">
+                        <span style="width: ${score * 100}%; background-color: ${
+                            score > 0.67 ? '#4CAF50' : 
+                            score < 0.33 ? '#ff4c4c' : 
+                            '#FFA500'
+                        };"></span>
+                    </div>
+                    <p><small>0 = Negative, 1 = Positive</small></p>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                    <p>Make sure the API server is running at http://localhost:5001</p>
+                    <p>Command to start the server:</p>
+                    <pre>python model_pipeline/model_serve.py</pre>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+# # MLOPS/.github/workflows/deploy_serving_app.yml
+# name: CI/CD for FastAPI Model Serving App
+
+# on:
+#   push:
+#     branches: [main] # Or your primary deployment branch
+#     paths: # Only trigger if serving app related files change
+#       - 'model_pipeline/model_serve.py'
+#       - 'model_pipeline/tests/**' # If you add tests for the serving app
+#       - 'dockerfiles/dockerfile'
+#       - 'dockerfiles/requirements.txt'
+#       - '.github/workflows/deploy_serving_app.yml'
+#   pull_request: # Run checks on PRs targeting main
+#     branches: [main]
+#     paths:
+#       - 'model_pipeline/model_serve.py'
+#       - 'model_pipeline/tests/**'
+#       - 'dockerfiles/dockerfile'
+#       - 'dockerfiles/requirements.txt'
+
+# env:
+#   # Define your image name. GHCR is recommended with GitHub Actions.
+#   IMAGE_NAME_GHCR: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/model-serving-app
+#   # Example for Docker Hub (if you prefer):
+#   # IMAGE_NAME_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME }}/your-repo-model-serving-app
+
+# jobs:
+#   build-and-test-serving-app:
+#     name: Build & Test Serving App
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.10' # Match your Dockerfile Python version
+
+#       - name: Install serving app dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install -r dockerfiles/requirements.txt # Dependencies for model_serve.py
+
+#       - name: Lint with flake8 (for serving app code)
+#         run: |
+#           pip install flake8
+#           flake8 model_pipeline/model_serve.py # Lint only the relevant Python file
+
+#       - name: Run tests for serving app (Optional but Recommended)
+#         run: |
+#           pip install pytest httpx # httpx is used by FastAPI's TestClient
+#           # Create tests in MLOPS/model_pipeline/tests/test_model_serve.py
+#           # Example: pytest model_pipeline/tests/
+#           echo "Skipping serving app tests for now. TODO: Implement tests."
+
+#   build-and-push-docker-image:
+#     name: Build & Push Docker Image
+#     needs: build-and-test-serving-app
+#     runs-on: ubuntu-latest
+#     if: github.ref == 'refs/heads/main' && github.event_name == 'push' # Only build/push on merge/push to main
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Log in to GitHub Container Registry (GHCR)
+#         uses: docker/login-action@v3
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }} # Built-in secret
+
+#       - name: Build and push Docker image to GHCR
+#         id: build-and-push
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: . # Build context is the root of MLOPS repo
+#           file: ./dockerfiles/Dockerfile # Path to your serving app's Dockerfile
+#           push: true
+#           tags: |
+#             ${{ env.IMAGE_NAME_GHCR }}:${{ github.sha }}
+#             ${{ env.IMAGE_NAME_GHCR }}:latest
+#           cache-from: type=gha
+#           cache-to: type=gha,mode=max
+#           labels: |
+#             org.opencontainers.image.source=${{ github.event.repository.html_url }}
+#             org.opencontainers.image.revision=${{ github.sha }}
+
+#   deploy-to-production-vm:
+#     name: Deploy to Production VM
+#     needs: build-and-push-docker-image
+#     runs-on: ubuntu-latest
+#     # This job runs only after a successful push to main and image build
+
+#     steps:
+#       - name: Deploy to VM via SSH
+#         uses: appleboy/ssh-action@master
+#         with:
+#           host: ${{ secrets.PROD_VM_HOST }}
+#           username: ${{ secrets.PROD_VM_USERNAME }}
+#           key: ${{ secrets.PROD_VM_SSH_KEY }}
+#           script: |
+#             echo "Logging into GHCR on VM to pull image..."
+#             # Ensure the user running Docker on the VM can access GHCR
+#             # This might require a PAT with read:packages scope for the VM user
+#             echo "${{ secrets.PAT_FOR_VM_GHCR_PULL }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+#             IMAGE_TO_PULL="${{ env.IMAGE_NAME_GHCR }}:latest"
+#             CONTAINER_NAME="mlops-fastapi-prod-server" # Define your production container name
+
+#             echo "Pulling latest image: $IMAGE_TO_PULL"
+#             sudo docker pull $IMAGE_TO_PULL
+
+#             echo "Stopping and removing old container: $CONTAINER_NAME"
+#             sudo docker stop $CONTAINER_NAME || true
+#             sudo docker rm $CONTAINER_NAME || true
+
+#             echo "Starting new container: $CONTAINER_NAME"
+#             # CRITICAL: These paths are ON THE VM where your MLOPS data resides.
+#             # Adjust VM_MLOPS_PROJECT_ROOT_ON_VM to the actual path on your server.
+#             VM_MLOPS_PROJECT_ROOT_ON_VM="/srv/my_mlops_project" # EXAMPLE PATH ON VM
+
+#             sudo docker run -d --name $CONTAINER_NAME \
+#               -p 5001:5001 \
+#               --restart always \
+#               -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/mlruns:/app/mlruns:ro" \
+#               -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/latest_runs.json:/app/artifacts_mount/latest_runs.json:ro" \
+#               -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/test_data.csv:/app/artifacts_mount/test_data.csv:ro" \
+#               -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/current_champion.json:/app/artifacts_mount/current_champion.json" \
+#               -e MLFLOW_TRACKING_PATH_IN_SERVING="/app/mlruns" \
+#               -e ARTIFACTS_MOUNT_PATH_IN_SERVING="/app/artifacts_mount" \
+#               # Add other production-specific environment variables from secrets
+#               # E.g., -e PRODUCTION_DB_HOST=${{ secrets.PROD_DB_HOST }}
+#               $IMAGE_TO_PULL
+# MLOPS/.github/workflows/deploy_serving_app.yml
+name: CI/CD for FastAPI Model Serving App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'model_pipeline/model_serve.py'
+      - 'model_pipeline/tests/**'
+      - 'dockerfiles/dockerfile'
+      - 'dockerfiles/requirements.txt'
+      - '.github/workflows/deploy_serving_app.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'model_pipeline/model_serve.py'
+      - 'model_pipeline/tests/**'
+      - 'dockerfiles/dockerfile'
+      - 'dockerfiles/requirements.txt'
+
+env:
+  IMAGE_NAME_GHCR: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/model-serving-app
+
+jobs:
+  build-and-test-serving-app:
+    name: Build & Test Serving App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install serving app dependencies and test tools
+        run: |
+          python -m pip install --upgrade pip
+          # Install dependencies from requirements.txt
+          pip install --force-reinstall -r dockerfiles/requirements.txt
+          # Install additional tools for testing and linting
+          pip install pytest httpx flake8
+          # Verify installed packages
+          pip list
+
+      - name: Lint with flake8
+        run: |
+          flake8 model_pipeline/model_serve.py model_pipeline/tests/
+
+      - name: Run tests for serving app
+        run: |
+          # Run pytest from the root of the repository
+          python -m pytest model_pipeline/tests/
+
+  build-and-push-docker-image:
+    name: Build & Push Docker Image
+    needs: build-and-test-serving-app
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image to GHCR
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./dockerfiles/dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME_GHCR }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME_GHCR }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+  deploy-to-production-vm:
+    name: Deploy to Production VM
+    needs: build-and-push-docker-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_VM_HOST }}
+          username: ${{ secrets.PROD_VM_USERNAME }}
+          key: ${{ secrets.PROD_VM_SSH_KEY }}
+          script: |
+            echo "Logging into GHCR on VM to pull image..."
+            echo "${{ secrets.PAT_FOR_VM_GHCR_PULL }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            IMAGE_TO_PULL="${{ env.IMAGE_NAME_GHCR }}:latest"
+            CONTAINER_NAME="mlops-fastapi-prod-server"
+
+            echo "Pulling latest image: $IMAGE_TO_PULL"
+            sudo docker pull $IMAGE_TO_PULL
+
+            echo "Stopping and removing old container: $CONTAINER_NAME"
+            sudo docker stop $CONTAINER_NAME || true
+            sudo docker rm $CONTAINER_NAME || true
+
+            echo "Starting new container: $CONTAINER_NAME"
+            # Replace with the ACTUAL ABSOLUTE path to your MLOPS project root on the VM
+            VM_MLOPS_PROJECT_ROOT_ON_VM="/srv/your_project_name_on_vm/MLOPS"
+
+            sudo docker run -d --name $CONTAINER_NAME \
+              -p 5001:5001 \
+              --restart always \
+              -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/mlruns:/app/mlruns:ro" \
+              -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/latest_runs.json:/app/artifacts_mount/latest_runs.json:ro" \
+              -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/test_data.csv:/app/artifacts_mount/test_data.csv:ro" \
+              -v "${VM_MLOPS_PROJECT_ROOT_ON_VM}/current_champion.json:/app/artifacts_mount/current_champion.json" \
+              -e MLFLOW_TRACKING_PATH_IN_SERVING="/app/mlruns" \
+              -e ARTIFACTS_MOUNT_PATH_IN_SERVING="/app/artifacts_mount" \
+              $IMAGE_TO_PULL
+
+  # Ensure IMAGE_NAME_GHCR and VM paths are correct

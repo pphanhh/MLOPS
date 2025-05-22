@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+mlflow
+pandas<2.2  # Ensure compatibility with great-expectations
+scikit-learn
+requests
+numpy<2,>=1.22.4  # Ensure compatibility with pandas
+torch
+transformers
+nltk

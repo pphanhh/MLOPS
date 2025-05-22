@@ -1,0 +1,24 @@
+# Airflow & logs
+airflow/*.pid
+airflow/*.db
+airflow/logs/
+
+# Virtual env
+venv/
+mlops/bin/
+mlops/lib/
+__pycache__/
+*.pyc
+
+# Artifacts
+mlruns/
+model_pipeline/mlruns/
+model_pipeline/*_saved/
+*.log
+
+# Env, configs
+*.yaml
+lib/
+*.conda
+/bin
+model_pipeline_tpa/

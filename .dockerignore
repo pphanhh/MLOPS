@@ -1,0 +1,17 @@
+# Loại bỏ các thư mục/file lớn
+venv/
+mlruns/
+model_pipeline/mlruns/
+model_pipeline/bert_saved/
+model_pipeline/distilbert_saved/
+model_pipeline/roberta_saved/
+data/
+airflow/
+exported_tweets.csv
+get-pip.py
+*.csv
+*.json
+*.log
+__pycache__/
+*.pyc
+*.ipynb

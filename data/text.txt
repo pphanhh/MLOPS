@@ -1,0 +1,16 @@
+cd /mnt/d/MLOps2
+source venv/bin/activate
+export MLFLOW_TRACKING_URI=http://localhost:5000
+mlflow ui --port 5000 --host 0.0.0.0 --backend-store-uri file:///mnt/d/MLOps2/model_pipeline/mlruns
+
+
+cd /mnt/d/MLOps2
+source venv/bin/activate
+export AIRFLOW_HOME=/mnt/d/MLOps2/airflow
+airflow webserver --port 8080
+
+
+cd /mnt/d/MLOps2
+source venv/bin/activate
+export AIRFLOW_HOME=/mnt/d/MLOps2/airflow
+airflow scheduler

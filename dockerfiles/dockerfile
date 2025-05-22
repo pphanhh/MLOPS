@@ -1,0 +1,32 @@
+# 
+# MLOPS/dockerfiles/dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Create a non-root user for better security
+RUN groupadd -r appuser && useradd -r -g appuser -s /sbin/nologin -c "Docker image user" appuser
+
+# Copy only the requirements file first to leverage Docker cache
+COPY dockerfiles/requirements.txt .
+
+# Install dependencies
+# Consider creating a virtual environment inside the image if you prefer
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+# model_serve.py is in model_pipeline, so we need to copy it from there
+COPY model_pipeline/model_serve.py .
+# If model_serve.py imports any other custom modules from model_pipeline, copy them too.
+# e.g., COPY model_pipeline/utils.py .
+
+# Create directories that will be used for volume mounts, and set permissions
+# These are placeholders for where MLflow artifacts and other files will be mounted
+RUN mkdir -p /app/mlruns && chown appuser:appuser /app/mlruns
+RUN mkdir -p /app/artifacts_mount && chown appuser:appuser /app/artifacts_mount # For latest_runs.json etc.
+
+USER appuser
+EXPOSE 5001 
+# Command to run the FastAPI application
+# Assuming model_serve.py defines an 'app' instance of FastAPI
+CMD ["uvicorn", "model_serve:app", "--host", "0.0.0.0", "--port", "5001"]

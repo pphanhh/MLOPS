@@ -1,0 +1,9 @@
+apache-airflow==2.7.1
+apache-airflow-providers-common-sql==1.8.0
+apache-airflow-providers-ftp==3.6.0
+apache-airflow-providers-http==4.6.0
+apache-airflow-providers-imap==3.4.0
+apache-airflow-providers-sqlite==3.5.0
+pandas==2.0.3
+requests==2.31.0
+requests-toolbelt==1.0.0

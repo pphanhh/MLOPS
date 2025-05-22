@@ -1,0 +1,7 @@
+{
+    "LogisticRegression_TFIDF": "c39fcb3c1dd5409b8adb6fc915da5abc",
+    "BERT_Transformer": "fe9fc2e7221e413ebef34c2ff9c22fe0",
+    "RoBERTa_Transformer": "ee96c155bbb44aa386739c002a285293",
+    "DistilBERT_Transformer": "a0474f579f4e4b35a48dc392838189d2",
+    "VADER_Sentiment": "7f5cb8ec91e0418ab5b79937b2303c95"
+}
