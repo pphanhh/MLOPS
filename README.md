@@ -1,12 +1,12 @@
-**Twitter Sentiment Analysis for Trump Election 2024**
+# Twitter Sentiment Analysis for Trump Election 2024
 
 A complete end-to-end MLOps pipeline to analyze public sentiment on Twitter (now X) toward Donald Trump’s 2024 presidential campaign — from real-time data crawling to model serving, all automated and orchestrated using modern DevOps practices.
 
-**Project Overview**
+# Project Overview
 
 This project builds a production-grade pipeline for daily sentiment analysis on Twitter posts related to Donald Trump. It uses Apache Airflow to orchestrate workflows, MLflow for model tracking and registration, FastAPI for real-time prediction, and Docker + GitHub Actions for CI/CD.
 
-**Key Features**
+# Key Features
 ****Automated Workflow with Apache Airflow****
 
 Two DAG paths:
