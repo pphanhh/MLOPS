@@ -9,6 +9,7 @@ mlops/bin/
 mlops/lib/
 __pycache__/
 *.pyc
+.env
 
 # Artifacts
 mlruns/

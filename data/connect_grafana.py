@@ -53,13 +53,13 @@ def upsert_datasource():
         put_url = f"{grafana_host}/api/datasources/{ds['id']}"
         r2 = requests.put(put_url, json=payload, headers=headers)
         r2.raise_for_status()
-        print(f"✅ Updated datasource '{datasource_name}' (id={ds['id']})")
+        print(f"Updated datasource '{datasource_name}' (id={ds['id']})")
     else:
         # Create new
         post_url = f"{grafana_host}/api/datasources"
         r3 = requests.post(post_url, json=payload, headers=headers)
         r3.raise_for_status()
-        print(f"✅ Created datasource '{datasource_name}'")
+        print(f"Created datasource '{datasource_name}'")
 
 
 def clone_dashboard():
@@ -88,7 +88,7 @@ def clone_dashboard():
     post_url = f"{grafana_host}/api/dashboards/db"
     resp = requests.post(post_url, json=payload, headers=headers)
     resp.raise_for_status()
-    print(f"✅ Cloned dashboard '{orig_dashboard_uid}' to '{mloops_dashboard_uid}'.")
+    print(f"Cloned dashboard '{orig_dashboard_uid}' to '{mloops_dashboard_uid}'.")
 
 
 def main():
@@ -100,5 +100,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         sys.exit(1)

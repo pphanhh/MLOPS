@@ -115,10 +115,10 @@ def test_connection():
             connect_timeout=3     # Timeout sau 3 giây
         )
         conn.close()
-        print(f"✅ Successfully connected to PostgreSQL at {db_host}:{db_port}")
+        print(f"Successfully connected to PostgreSQL at {db_host}:{db_port}")
         return True
     except Exception as e:
-        print(f"❌ Failed to connect to PostgreSQL at {db_host}:{db_port}")
+        print(f"Failed to connect to PostgreSQL at {db_host}:{db_port}")
         print(f"Error message: {str(e)}")
         print("\nGợi ý khắc phục:")
         print("1. Nếu PostgreSQL đang chạy trên Windows và bạn đang sử dụng WSL:")
@@ -142,7 +142,7 @@ def main():
     
     # Test connection first - if it fails, suggest alternatives
     if not test_connection():
-        print("❌ Không thể kết nối đến PostgreSQL. Đang dừng chương trình.")
+        print("Không thể kết nối đến PostgreSQL. Đang dừng chương trình.")
         sys.exit(1)
     
     # Get default input file
@@ -151,7 +151,7 @@ def main():
         default_input = get_latest_labeled_file() or f'/mnt/d/MLOps2/data/labeled/labeled_twitter_{timestamp}.csv'
     except Exception as e:
         default_input = f'/mnt/d/MLOps2/data/labeled/labeled_twitter_{timestamp}.csv'
-        print(f"⚠️ Không thể tìm thấy file CSV mặc định: {e}")
+        print(f"Không thể tìm thấy file CSV mặc định: {e}")
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Load CSV data into PostgreSQL")
@@ -197,7 +197,7 @@ def main():
         
         # Kiểm tra xem dữ liệu có được đọc đúng không
         if len(df) == 0:
-            print("⚠️ File CSV không có dữ liệu!")
+            print("File CSV không có dữ liệu!")
             sys.exit(1)
             
         # Tạo kết nối trực tiếp để kiểm tra một cách toàn diện
@@ -216,9 +216,9 @@ def main():
         cursor = conn.cursor()
         try:
             cursor.execute(f"CREATE DATABASE {args.database}")
-            print(f"✅ Đã tạo database '{args.database}'")
+            print(f"Đã tạo database '{args.database}'")
         except psycopg2.errors.DuplicateDatabase:
-            print(f"✅ Database '{args.database}' đã tồn tại")
+            print(f"Database '{args.database}' đã tồn tại")
         
         conn.close()
         
@@ -237,9 +237,9 @@ def main():
         if args.mode == "replace":
             try:
                 cursor.execute(f"DROP TABLE IF EXISTS {args.table}")
-                print(f"✅ Đã xóa bảng '{args.table}' cũ")
+                print(f"Đã xóa bảng '{args.table}' cũ")
             except Exception as e:
-                print(f"⚠️ Không thể xóa bảng cũ: {e}")
+                print(f"Không thể xóa bảng cũ: {e}")
         
         # Đóng kết nối psycopg2
         conn_target.close()
@@ -253,10 +253,10 @@ def main():
         print('Đang kết nối đến PostgreSQL...")')
         # Lưu dữ liệu
         df.to_sql(args.table, engine, if_exists=args.mode, index=False)
-        print(f"✅ Đã load thành công {len(df)} dòng vào {args.database}.{args.table}")
+        print(f"Đã load thành công {len(df)} dòng vào {args.database}.{args.table}")
         
     except Exception as e:
-        print(f"❌ Lỗi: {str(e)}")
+        print(f"Lỗi: {str(e)}")
         print("Đang chuyển sang giải pháp sử dụng SQLite...")
         
         # # Phương án dự phòng: Lưu vào SQLite
@@ -275,10 +275,10 @@ def main():
         #     df.to_sql(args.table, conn, if_exists=args.mode, index=False)
         #     conn.close()
             
-        #     print(f"✅ Đã lưu thành công {len(df)} dòng vào SQLite: {sqlite_file}")
+        #     print(f"Đã lưu thành công {len(df)} dòng vào SQLite: {sqlite_file}")
         #     print(f"   Bạn có thể truy vấn dữ liệu bằng lệnh: sqlite3 {sqlite_file}")
         # except Exception as sqlite_error:
-        #     print(f"❌ Lỗi khi lưu vào SQLite: {str(sqlite_error)}")
+        #     print(f"Lỗi khi lưu vào SQLite: {str(sqlite_error)}")
         #     sys.exit(1)
 
 if __name__ == "__main__":

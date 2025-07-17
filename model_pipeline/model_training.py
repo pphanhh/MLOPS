@@ -34,7 +34,7 @@ from sqlalchemy.engine import Engine
 class DataProcessor:
     def __init__(self, sql_query=None):
         self.db_user = os.getenv('DB_USER', 'postgres')
-        self.db_pass = os.getenv('DB_PASSWORD', '123456789')
+        self.db_pass = os.getenv('DB_PASSWORD')
         self.db_host = os.getenv('DB_HOST', '172.26.16.1')
         self.db_port = os.getenv('DB_PORT', '5432')
         self.db_name = os.getenv('DB_NAME', 'twitter_analysis')

@@ -12,7 +12,6 @@ import sys
 env_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path=env_path)
 
-# ⚠️ Nếu muốn debug giá trị .env đang load:
 print("DEBUG ENV:", {k: os.getenv(k) for k in os.environ if "TWITTER_" in k})
 
 SEARCH_KEYWORDS = [
@@ -214,10 +213,10 @@ async def main_keyword_scrape(accounts_credentials, active_clients):
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(all_tweets_data)
-        print(f"\n✅ Data saved to: {output_filename}")
+        print(f"\nData saved to: {output_filename}")
         
     else:
-        print("\n⚠️ No tweets were saved.")
+        print("\n No tweets were saved.")
 async def crawl():
     # Load credentials
     accounts_credentials = []
